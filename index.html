@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="CSS/styles.css">
+    <title>HTML Quiz</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 HTML Knowledge Quiz</h1>
+            <p style="color: #666; margin-top: 10px;">Test your knowledge! Progress is saved automatically.</p>
+            <div class="score-board">
+                <div class="score-item correct-score">✓ Correct: <span id="correctCount">0</span></div>
+                <div class="score-item wrong-score">✗ Wrong: <span id="wrongCount">0</span></div>
+            </div>
+            <div class="timer" id="timer">Time: 00:00</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div id="quizContainer"></div>
+        <div class="navigation" id="navigation" style="display: none;">
+            <button class="nav-btn" id="prevBtn" onclick="prevQuestion()">Previous</button>
+            <button class="nav-btn" id="nextBtn" onclick="nextQuestion()">Next</button>
+            <button class="finish-btn" id="finishBtn" onclick="finishQuiz()" style="display: none;">Finish Quiz</button>
+        </div>
+        <div id="summaryContainer" style="display: none;"></div>
+    </div>
+
+    <script type="module" src="Script/script.js"></script>
+</body>
+
+</html>
