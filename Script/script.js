@@ -9,6 +9,17 @@ let selections = {};
 let timerInterval;
 let timeElapsed = 0;
 
+// Escape HTML so questions/options containing tags render as text
+function escapeHTML(str) {
+  if (typeof str !== "string") return str;
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
@@ -39,6 +50,7 @@ function renderQuestion() {
     const isAnswered = answered.has(index);
     const isSelected = selections[index] === optIndex;
     const checked = isSelected ? "checked" : "";
+    const safeOption = escapeHTML(option);
 
     optionsHTML += `
       <label class="option-label ${
@@ -47,13 +59,13 @@ function renderQuestion() {
         <input type="radio" name="q${index}" value="${optIndex}" ${checked} ${
       isAnswered ? "disabled" : ""
     }>
-        ${option}
+        ${safeOption}
       </label>
     `;
   });
 
   card.innerHTML = `
-    <div class="question-header">${question.q}</div>
+    <div class="question-header">${escapeHTML(question.q)}</div>
     <div class="options">${optionsHTML}</div>
     <button class="submit-btn" onclick="checkAnswer(${index})" 
       ${
@@ -87,10 +99,14 @@ function showFeedback(questionIndex) {
   feedback.className = `feedback ${
     selectedValue === correctAnswer ? "correct" : "wrong"
   } show`;
-  feedback.innerHTML =
-    selectedValue === correctAnswer
-      ? "🎉 Correct!"
-      : `❌ Correct answer: ${questions[questionIndex].options[correctAnswer]}`;
+  if (selectedValue === correctAnswer) {
+    feedback.textContent = "🎉 Correct!";
+  } else {
+    const correctText = escapeHTML(
+      questions[questionIndex].options[correctAnswer]
+    );
+    feedback.textContent = `❌ Correct answer: ${correctText}`;
+  }
 }
 
 function checkAnswer(questionIndex) {
