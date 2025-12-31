@@ -247,18 +247,27 @@ function startQuiz(resumeOnly = false) {
   // read timer preference
   const timerCheckbox = document.getElementById("includeTimer");
   includeTimer = timerCheckbox ? timerCheckbox.checked : true;
-  // hide start menu
   const startMenu = document.getElementById("startMenu");
+  const saved = localStorage.getItem("quizState");
+
+  if (saved && !resumeOnly) {
+    const proceed = confirm(
+      "Existing progress was found. Starting a new quiz will erase saved answers. Continue and reset progress?"
+    );
+    if (!proceed) {
+      // user cancelled starting new quiz; do nothing and keep start menu visible
+      return;
+    }
+    // user confirmed — remove saved progress and start fresh
+    localStorage.removeItem("quizState");
+  }
+
+  // hide start menu and show quiz UI
   if (startMenu) startMenu.style.display = "none";
-  // show quiz UI
   document.getElementById("quizContainer").style.display = "block";
   document.getElementById("navigation").style.display = "flex";
 
-  const saved = localStorage.getItem("quizState");
   if (saved && resumeOnly) {
-    loadState();
-  } else if (saved && !resumeOnly) {
-    // ask to resume if found (simple behavior: resume automatically)
     loadState();
   } else {
     // fresh start
@@ -275,7 +284,17 @@ function startQuiz(resumeOnly = false) {
   if (includeTimer) startTimer();
   else {
     stopTimer();
-    document.getElementById("timer").textContent = "Timer disabled";
+    const timerEl = document.getElementById("timer");
+    if (timerEl) timerEl.textContent = "Timer disabled";
+  }
+}
+
+function confirmFinish() {
+  // auto-submit current selection silently so it is included in results
+  submitSelection(currentQuestion, true);
+  const ok = confirm("Are you sure you want to finish the quiz now?");
+  if (ok) {
+    window.finishQuiz();
   }
 }
 
@@ -290,3 +309,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.startQuiz = startQuiz;
 window.checkAnswer = checkAnswer;
+window.confirmFinish = confirmFinish;
