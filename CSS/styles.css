@@ -28,6 +28,7 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Lighter shadow */
   margin-bottom: 30px;
   text-align: center;
+  position: relative;
 }
 
 .header h1 {
@@ -64,6 +65,59 @@ body {
   margin-top: 10px;
   font-size: 1.2em;
   color: #333;
+}
+
+.finish-here {
+  position: absolute;
+  right: 40px;
+  top: 28px;
+  background: #ff7043;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.finish-here:hover {
+  transform: translateY(-2px);
+}
+
+/* Start menu overlay */
+.start-menu {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  max-width: 500px;
+  margin: 40px auto;
+  text-align: center;
+}
+.start-menu h2 {
+  margin-bottom: 16px;
+  color: #333;
+}
+.start-option {
+  display: block;
+  margin: 12px 0;
+  font-size: 1.1em;
+}
+.start-actions {
+  margin-top: 18px;
+}
+.start-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+}
+.start-btn:hover {
+  transform: translateY(-2px);
 }
 
 .question-card {

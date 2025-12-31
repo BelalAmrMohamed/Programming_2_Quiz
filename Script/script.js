@@ -1,5 +1,5 @@
 // script.js
-import { questions } from "./questions.js"; // This means questions.js is in the same folder as script.js
+import { questions } from "./questions.js";
 
 let currentQuestion = 0;
 let correctCount = 0;
@@ -8,6 +8,7 @@ let answered = new Set();
 let selections = {};
 let timerInterval;
 let timeElapsed = 0;
+let includeTimer = true;
 
 // Escape HTML so questions/options containing tags render as text
 function escapeHTML(str) {
@@ -33,6 +34,11 @@ function startTimer() {
     ).textContent = `Time: ${minutes}:${seconds}`;
     saveState();
   }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
 }
 
 function renderQuestion() {
@@ -84,6 +90,36 @@ function renderQuestion() {
   updateProgress();
 }
 
+// Try to submit current selected answer without alert (used by navigation)
+function submitSelection(questionIndex, suppressAlert = false) {
+  if (answered.has(questionIndex)) return true;
+  const selected = document.querySelector(
+    `input[name="q${questionIndex}"]:checked`
+  );
+  if (!selected) {
+    if (!suppressAlert) alert("Select an answer!");
+    return false;
+  }
+  const selectedValue = parseInt(selected.value);
+  selections[questionIndex] = selectedValue;
+  answered.add(questionIndex);
+
+  if (selectedValue === questions[questionIndex].correct) {
+    correctCount++;
+  } else {
+    wrongCount++;
+  }
+
+  updateScoreboard();
+  saveState();
+  renderQuestion();
+
+  if (answered.size === questions.length) {
+    document.getElementById("finishBtn").style.display = "inline-block";
+  }
+  return true;
+}
+
 function showFeedback(questionIndex) {
   const correctAnswer = questions[questionIndex].correct;
   const selectedValue = selections[questionIndex];
@@ -110,28 +146,7 @@ function showFeedback(questionIndex) {
 }
 
 function checkAnswer(questionIndex) {
-  const selected = document.querySelector(
-    `input[name="q${questionIndex}"]:checked`
-  );
-  if (!selected) return alert("Select an answer!");
-
-  const selectedValue = parseInt(selected.value);
-  selections[questionIndex] = selectedValue;
-  answered.add(questionIndex);
-
-  if (selectedValue === questions[questionIndex].correct) {
-    correctCount++;
-  } else {
-    wrongCount++;
-  }
-
-  renderQuestion(); // Re-render to show feedback and hide button
-  updateScoreboard();
-  saveState();
-
-  if (answered.size === questions.length) {
-    document.getElementById("finishBtn").style.display = "inline-block";
-  }
+  return submitSelection(questionIndex, false);
 }
 
 function updateScoreboard() {
@@ -153,6 +168,8 @@ function updateNavigation() {
 
 window.prevQuestion = () => {
   if (currentQuestion > 0) {
+    // auto-submit current selection if present
+    submitSelection(currentQuestion, true);
     currentQuestion--;
     renderQuestion();
     saveState();
@@ -160,6 +177,8 @@ window.prevQuestion = () => {
 };
 window.nextQuestion = () => {
   if (currentQuestion < questions.length - 1) {
+    // auto-submit current selection if present
+    submitSelection(currentQuestion, true);
     currentQuestion++;
     renderQuestion();
     saveState();
@@ -167,13 +186,28 @@ window.nextQuestion = () => {
 };
 
 window.finishQuiz = () => {
-  clearInterval(timerInterval);
+  stopTimer();
   document.getElementById("quizContainer").style.display = "none";
   document.getElementById("navigation").style.display = "none";
   const summary = document.getElementById("summaryContainer");
   summary.style.display = "block";
-  summary.innerHTML = `<h2>Quiz Complete!</h2><p>Correct: ${correctCount} | Wrong: ${wrongCount}</p>
-                       <button class="reset-quiz-btn" onclick="resetQuiz()">Restart</button>`;
+
+  let html = `<h2>Quiz Complete!</h2><p>Correct: ${correctCount} | Wrong: ${wrongCount} | Total: ${questions.length}</p>`;
+  html += '<div class="summary-list">';
+  questions.forEach((q, i) => {
+    const user = selections.hasOwnProperty(i) ? selections[i] : null;
+    const correct = q.correct;
+    const statusClass =
+      user === null ? "unanswered" : user === correct ? "correct" : "wrong";
+    const userText = user === null ? "Unanswered" : escapeHTML(q.options[user]);
+    const correctText = escapeHTML(q.options[correct]);
+    html += `<div class="summary-item ${statusClass}"><div class="question-header">${escapeHTML(
+      q.q
+    )}</div><div> Your answer: ${userText}</div><div> Correct answer: ${correctText}</div></div>`;
+  });
+  html += "</div>";
+  html += `<button class="reset-quiz-btn" onclick="resetQuiz()">Restart</button>`;
+  summary.innerHTML = html;
 };
 
 window.resetQuiz = () => {
@@ -206,8 +240,53 @@ function loadState() {
   }
   updateScoreboard();
   renderQuestion();
-  startTimer();
+  // Do not auto-start timer here; caller decides based on user choice
 }
 
-loadState();
+function startQuiz(resumeOnly = false) {
+  // read timer preference
+  const timerCheckbox = document.getElementById("includeTimer");
+  includeTimer = timerCheckbox ? timerCheckbox.checked : true;
+  // hide start menu
+  const startMenu = document.getElementById("startMenu");
+  if (startMenu) startMenu.style.display = "none";
+  // show quiz UI
+  document.getElementById("quizContainer").style.display = "block";
+  document.getElementById("navigation").style.display = "flex";
+
+  const saved = localStorage.getItem("quizState");
+  if (saved && resumeOnly) {
+    loadState();
+  } else if (saved && !resumeOnly) {
+    // ask to resume if found (simple behavior: resume automatically)
+    loadState();
+  } else {
+    // fresh start
+    currentQuestion = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    answered = new Set();
+    selections = {};
+    timeElapsed = 0;
+    updateScoreboard();
+    renderQuestion();
+  }
+
+  if (includeTimer) startTimer();
+  else {
+    stopTimer();
+    document.getElementById("timer").textContent = "Timer disabled";
+  }
+}
+
+// If there's saved progress, show a resume button on the start menu
+document.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem("quizState");
+  if (saved) {
+    const resumeBtn = document.getElementById("resumeBtn");
+    if (resumeBtn) resumeBtn.style.display = "inline-block";
+  }
+});
+
+window.startQuiz = startQuiz;
 window.checkAnswer = checkAnswer;
